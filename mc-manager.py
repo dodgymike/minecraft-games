@@ -34,7 +34,34 @@ else:
     z = z_min
 
     # always set world spawn point
+    os.write(stdout_master, "/difficulty peaceful\n")
+    time.sleep(0.5)
     os.write(stdout_master, "/setworldspawn 1 1 1\n")
+    time.sleep(0.5)
+    os.write(stdout_master, "/worldborder center 0 0\n")
+    time.sleep(0.5)
+    os.write(stdout_master, "/worldborder set 50\n")
+    time.sleep(0.5)
+
+    lava_depth = 1
+    lava_level = 200
+    interval = 5
+    while True:
+        os.write(stdout_master, "/say Remember kids, lava is the floor\n")
+
+        time_left = 30
+        while time_left > 0:
+            os.write(stdout_master, "/say {} seconds left until lava goes up\n".format(time_left))
+            time_left -= interval
+            time.sleep(interval)
+
+        os.write(stdout_master, "/fill -25 {} -25 25 {} 25 lava\n".format(lava_level-lava_depth, lava_level))
+        time.sleep(0.5)
+        os.write(stdout_master, "/fill 1 {} 1 1 {} 1 cobblestone\n".format(lava_level+5, lava_level+5))
+        time.sleep(0.5)
+        os.write(stdout_master, "/setworldspawn 1 {} 1\n".format(lava_level+6))
+        time.sleep(0.5)
+        lava_level += lava_depth
 
     while True:
         if x >= x_max:
