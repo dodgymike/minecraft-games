@@ -23,15 +23,18 @@ else:
     z_incr = 20
 
     x_max = 700
-    x_min = 10
+    x_min = -100
     y_max = 100
     y_min = 0
     z_max = 600
-    z_min = 200
+    z_min = 240
 
     x = x_min
     y = y_min
     z = z_min
+
+    # always set world spawn point
+    os.write(stdout_master, "/setworldspawn 1 1 1\n")
 
     while True:
         if x >= x_max:
@@ -46,19 +49,37 @@ else:
             print "done"
             break
 
+#        create_falling_sand_command = "/summon FallingSand 1 1 1 {Time:1,Block:\"minecraft:redstone_block\"}\n"
+#        move_falling_sand_command = "/tp @e[type=FallingSand] {} {} {}\n".format(x, y, z)
+        move_falling_sand_command = "/tp surfmike {} {} {}\n".format(x, y, z)
+
         fill_string = "/fill {} {} {} {} {} {} air\n".format(x, y, z, x + x_incr, y + y_incr, z + z_incr)
         glass_fill_string = "/fill {} {} {} {} {} {} glass\n".format(x, y, z, x + x_incr, y, z + z_incr)
-        tp_string = "/tp surfmike {} {} {}\n".format(x, y, z)
-        print tp_string
+        #tp_string = "/tp surfmike {} {} {}\n".format(x, y, z)
+        #print tp_string
+        #print create_falling_sand_command
+        print move_falling_sand_command
         print fill_string
-        os.write(stdout_master, tp_string)
-        time.sleep(2)
+
+        # ensure the local chunk is loaded
+        #os.write(stdout_master, create_falling_sand_command)
+        #time.sleep(0.5)
+        os.write(stdout_master, move_falling_sand_command)
+        time.sleep(0.5)
+
+       
+        #os.write(stdout_master, tp_string)
+        #time.sleep(2)
+
+        # clear out the blocks
         os.write(stdout_master, fill_string)
         time.sleep(2)
 
         if y == 0:
+            # fill the bottom of the map with glass
             print glass_fill_string
             os.write(stdout_master, glass_fill_string)
             time.sleep(1)
 
         x += x_incr
+
