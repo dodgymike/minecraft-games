@@ -1,9 +1,18 @@
 #!/usr/bin/python
 
+import json
 import os,sys,time
 
 stdin_slave, stdout_master = os.pipe()
 stdin_master,stdout_slave  = os.pipe()
+
+def save_config(config):
+    with open('config.json', 'w') as outfile:
+        json.dump(config, outfile)
+
+def load_config():
+    with open('config.json', 'r') as infile:
+        return json.load(infile)
 
 pid = os.fork()
 if pid == 0:
@@ -14,9 +23,11 @@ if pid == 0:
     os.execv(cmd[0],cmd)
 
 else:
-    time.sleep(10)
+    time.sleep(30)
     #while True:
     #    print os.read(stdin_master, 1)
+
+    config = load_config()
 
     x_incr = 40
     y_incr = 20
@@ -33,12 +44,46 @@ else:
     y = y_min
     z = z_min
 
+    spawn_x = 1
     spawn_height = 60
+    spawn_y = 1
+    lava_depth = 1
+    lava_level = 1
+    interval = 5
+
+    if "spawn_x" in config:
+      spawn_x = config["spawn_x"]
+    if "spawn_y" in config:
+      spawn_y = config["spawn_y"]
+    if "spawn_height" in config:
+      spawn_height = config["spawn_height"]
+    if "lava_depth" in config:
+      lava_depth = config["lava_depth"]
+    if "lava_level" in config:
+      lava_level = config["lava_level"]
+    if "interval" in config:
+      interval = config["interval"]
+
+    print("spawn_x ({})".format(spawn_x))
+    print("spawn_y ({})".format(spawn_y))
+    print("spawn_height ({})".format(spawn_height))
+    print("lava_depth ({})".format(lava_depth))
+    print("lava_level ({})".format(lava_level))
+    print("interval ({})".format(interval))
+
+    save_config({
+      "spawn_x" : spawn_x,
+      "spawn_y" : spawn_y,
+      "spawn_height": spawn_height,
+      "lava_depth": lava_depth,
+      "lava_level": lava_level,
+      "interval": interval,
+    })
 
     # always set world spawn point
     os.write(stdout_master, "/difficulty peaceful\n")
     time.sleep(0.5)
-    os.write(stdout_master, "/setworldspawn 1 {} 1\n".format(spawn_height))
+    os.write(stdout_master, "/setworldspawn {} {} {}\n".format(spawn_x, spawn_height ,spawn_y))
     time.sleep(0.5)
     os.write(stdout_master, "/worldborder center 0 0\n")
     time.sleep(0.5)
@@ -47,19 +92,19 @@ else:
     os.write(stdout_master, "/op surfmike\n")
     time.sleep(0.5)
 
-    for height in range(1, spawn_height):
-      os.write(stdout_master, "/fill -25 {} -25 25 {} 25 cobblestone\n".format(height, height+1))
-      time.sleep(1)
-    for height in range(spawn_height, spawn_height+5):
-      os.write(stdout_master, "/fill -25 {} -25 25 {} 25 air\n".format(height, height+1))
-      time.sleep(1)
-    os.write(stdout_master, "/fill -25 {} -25 25 {} 25 oak_planks\n".format(spawn_height, spawn_height-5))
-    time.sleep(1)
+    #for height in range(1, spawn_height):
+    #  os.write(stdout_master, "/fill -25 {} -25 25 {} 25 cobblestone\n".format(height, height+1))
+    #  time.sleep(1)
+    #for height in range(spawn_height, spawn_height+5):
+    #  os.write(stdout_master, "/fill -25 {} -25 25 {} 25 air\n".format(height, height+1))
+    #  time.sleep(1)
+    #os.write(stdout_master, "/fill -25 {} -25 25 {} 25 oak_planks\n".format(spawn_height, spawn_height-5))
+    #time.sleep(1)
 
-    lava_depth = 1
-    lava_level = 1
-    interval = 5
     while True:
+      os.write(stdout_master, "/worldborder center {} {}\n".format(spawn_x, spawn_y))
+
+      while True:
         os.write(stdout_master, "/say Remember kids, lava is the floor\n")
 
         time_left = 30
@@ -68,58 +113,48 @@ else:
             time_left -= interval
             time.sleep(interval)
 
-        os.write(stdout_master, "/fill -25 {} -25 25 {} 25 lava\n".format(lava_level-lava_depth, lava_level))
+        os.write(stdout_master, "/fill {} {} {} {} {} {} lava keep\n".format(spawn_x-25, lava_level-lava_depth, spawn_y-25, spawn_x + 25, lava_level, spawn_y + 25))
         time.sleep(0.5)
-        os.write(stdout_master, "/fill 1 {} 1 1 {} 1 cobblestone\n".format(lava_level+5, lava_level+5))
+        os.write(stdout_master, "/fill {} {} {} {} {} {} glass hollow\n".format(spawn_x-5, lava_level+5, spawn_y-5, spawn_x+5, lava_level+15, spawn_y+5))
         time.sleep(0.5)
-        os.write(stdout_master, "/setworldspawn 1 {} 1\n".format(lava_level+6))
+        os.write(stdout_master, "/fill {} {} {} {} {} {} cobblestone\n".format(spawn_x+3, lava_level+5, spawn_y+3, spawn_x+1, lava_level+6, spawn_y+1))
+        time.sleep(0.5)
+        os.write(stdout_master, "/fill {} {} {} {} {} {} oak_planks\n".format(spawn_x-25, 1, spawn_y-25, spawn_x-25, 255, spawn_y-25))
+        time.sleep(0.5)
+        os.write(stdout_master, "/fill {} {} {} {} {} {} oak_planks\n".format(spawn_x+4, lava_level+5, spawn_y+4, spawn_x+5, lava_level+6, spawn_y+5))
+        time.sleep(0.5)
+        os.write(stdout_master, "/fill {} {} {} {} {} {} iron_ore\n".format(spawn_x-4, lava_level+5, spawn_y-4, spawn_x-5, lava_level+6, spawn_y-5))
+        time.sleep(0.5)
+        os.write(stdout_master, "/fill {} {} {} {} {} {} coal_ore\n".format(spawn_x-4, lava_level+5, spawn_y+4, spawn_x-5, lava_level+6, spawn_y+5))
+        time.sleep(0.5)
+        os.write(stdout_master, "/setworldspawn {} {} {}\n".format(spawn_x, lava_level+6, spawn_y))
         time.sleep(0.5)
         lava_level += lava_depth
+        config["lava_level"] = lava_level
+        save_config({
+          "spawn_x" : spawn_x,
+          "spawn_y" : spawn_y,
+          "spawn_height": spawn_height,
+          "lava_depth": lava_depth,
+          "lava_level": lava_level,
+          "interval": interval,
+        })
 
-    while True:
-        if x >= x_max:
-            x = x_min
-            y += y_incr
+        if lava_level >= 255:
+          os.write(stdout_master, "/say GAME OVER\n")
+          break
 
-        if y >= y_max:
-            y = y_min
-            z += z_incr
+      spawn_x += 150
+      if spawn_x > 1000:
+        spawn_x = 1
+        spawn_y += 150
 
-        if z >= z_max:
-            print "done"
-            break
-
-#        create_falling_sand_command = "/summon FallingSand 1 1 1 {Time:1,Block:\"minecraft:redstone_block\"}\n"
-#        move_falling_sand_command = "/tp @e[type=FallingSand] {} {} {}\n".format(x, y, z)
-        move_falling_sand_command = "/tp surfmike {} {} {}\n".format(x, y, z)
-
-        fill_string = "/fill {} {} {} {} {} {} air\n".format(x, y, z, x + x_incr, y + y_incr, z + z_incr)
-        glass_fill_string = "/fill {} {} {} {} {} {} glass\n".format(x, y, z, x + x_incr, y, z + z_incr)
-        #tp_string = "/tp surfmike {} {} {}\n".format(x, y, z)
-        #print tp_string
-        #print create_falling_sand_command
-        print move_falling_sand_command
-        print fill_string
-
-        # ensure the local chunk is loaded
-        #os.write(stdout_master, create_falling_sand_command)
-        #time.sleep(0.5)
-        os.write(stdout_master, move_falling_sand_command)
-        time.sleep(0.5)
-
-       
-        #os.write(stdout_master, tp_string)
-        #time.sleep(2)
-
-        # clear out the blocks
-        os.write(stdout_master, fill_string)
-        time.sleep(2)
-
-        if y == 0:
-            # fill the bottom of the map with glass
-            print glass_fill_string
-            os.write(stdout_master, glass_fill_string)
-            time.sleep(1)
-
-        x += x_incr
-
+      lava_level = 1
+      save_config({
+        "spawn_x" : spawn_x,
+        "spawn_y" : spawn_y,
+        "spawn_height": spawn_height,
+        "lava_depth": lava_depth,
+        "lava_level": lava_level,
+        "interval": interval,
+      })
