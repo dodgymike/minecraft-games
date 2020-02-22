@@ -33,18 +33,31 @@ else:
     y = y_min
     z = z_min
 
+    spawn_height = 60
+
     # always set world spawn point
     os.write(stdout_master, "/difficulty peaceful\n")
     time.sleep(0.5)
-    os.write(stdout_master, "/setworldspawn 1 1 1\n")
+    os.write(stdout_master, "/setworldspawn 1 {} 1\n".format(spawn_height))
     time.sleep(0.5)
     os.write(stdout_master, "/worldborder center 0 0\n")
     time.sleep(0.5)
     os.write(stdout_master, "/worldborder set 50\n")
     time.sleep(0.5)
+    os.write(stdout_master, "/op surfmike\n")
+    time.sleep(0.5)
+
+    for height in range(1, spawn_height):
+      os.write(stdout_master, "/fill -25 {} -25 25 {} 25 cobblestone\n".format(height, height+1))
+      time.sleep(1)
+    for height in range(spawn_height, spawn_height+5):
+      os.write(stdout_master, "/fill -25 {} -25 25 {} 25 air\n".format(height, height+1))
+      time.sleep(1)
+    os.write(stdout_master, "/fill -25 {} -25 25 {} 25 oak_planks\n".format(spawn_height, spawn_height-5))
+    time.sleep(1)
 
     lava_depth = 1
-    lava_level = 200
+    lava_level = 1
     interval = 5
     while True:
         os.write(stdout_master, "/say Remember kids, lava is the floor\n")
