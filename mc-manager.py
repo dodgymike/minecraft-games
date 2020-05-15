@@ -16,7 +16,7 @@ def load_config():
         return json.load(infile)
 
 def send_command(command_text):
-    os.write(stdout_master, "{}\n".format(command_text))
+    os.write(stdout_master, str.encode("{}\n".format(command_text)))
     print("COMMAND: {}".format(command_text))
     time.sleep(0.5)
 
@@ -33,7 +33,7 @@ def chars_to_read():
 
 def print_all():
     while chars_to_read():
-      print read_response()
+      print(read_response())
 
 def read_all():
     responses = []
@@ -46,12 +46,14 @@ def read_response():
     if not chars_to_read():
       return None
 
-    response = ""
+    response = b''
 
     while True:
       response_char = os.read(stdin_master, 1)
-      if response_char == '\n':
-        return response
+      #print(response_char)
+      if response_char == b'\n':
+        #print("NEW RESPONSE LINE")
+        return response.decode("utf-8")
          
       response += response_char
 
@@ -81,12 +83,13 @@ else:
     print("Waiting for server to finish startup")
     while True:
       response = read_response()
+      print("Got response ({})".format(response))
       if response == None:
         time.sleep(1)
         continue
 
       print("Got response ({})".format(response))
-      if "[Server thread/INFO]: Done" in response:
+      if "INFO]: Done" in response:
         print("Server startup complete")
         break
 
